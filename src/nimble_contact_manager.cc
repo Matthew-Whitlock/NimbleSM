@@ -408,7 +408,7 @@ ContactManager::ComputeContactForce(int step, bool debug_output, nimble::Viewify
   const auto& parser = data_manager_.GetParser();
   if (parser.UseKokkos()) {
 #ifdef NIMBLE_HAVE_KOKKOS
-    std::cout << " Enter if section .. ComputeContactForce \n";
+    //std::cout << " Enter if section .. ComputeContactForce \n";
     auto model_ptr       = data_manager_.GetMacroScaleData();
     auto model_data      = dynamic_cast<nimble_kokkos::ModelData*>(model_ptr.get());
     auto field_ids       = data_manager_.GetFieldIDs();
@@ -1214,7 +1214,7 @@ ContactManager::BoundingBox(double& x_min, double& x_max, double& y_min, double&
 {
   double big = std::numeric_limits<double>::max();
 
-  if (data_manager_.GetParser().UseKokkos()) {
+  if (0 && data_manager_.GetParser().UseKokkos()) {
 #ifdef NIMBLE_HAVE_KOKKOS
     nimble_kokkos::DeviceScalarNodeView contact_bounding_box_d("contact_bounding_box_d", 6);
     nimble_kokkos::HostScalarNodeView   contact_bounding_box_h("contact_bounding_box_h", 6);

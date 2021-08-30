@@ -136,7 +136,7 @@ class ContactInterface
       nimble_kokkos::DeviceContactEntityArrayView contact_faces,
       KokkosPenaltyContactEnforcement             contact_enforcement)
   {
-    std::cerr << "Warning: running no-op contact---no interface enabled!" << std::endl;
+    //std::cerr << "Warning: running no-op contact---no interface enabled!" << std::endl;
   }
 
   KOKKOS_FORCEINLINE_FUNCTION

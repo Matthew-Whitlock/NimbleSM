@@ -76,6 +76,10 @@ class Block : public nimble::BlockBase
   {
   }
 
+  Block(int block_id) : BlockBase(), elem_conn_d("element_connectivity_d_" + std::to_string(block_id), 0), element_device_(nullptr), material_device_(nullptr)
+  {
+  }
+
   ~Block() override
   {
     /* Kokkos::parallel_for(1, KOKKOS_LAMBDA(int) { */

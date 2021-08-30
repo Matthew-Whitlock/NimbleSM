@@ -185,6 +185,23 @@ class ModelDataBase
     throw std::runtime_error(" Exodus Output Not Implemented \n");
   }
 
+  /// \brief Time Integration step for acceleration
+  ///
+  /// \param data_manager Reference to the DataManager object
+  /// \param time_previous
+  /// \param time_current
+  /// \param is_output_step
+  /// \param contact_enabled
+  ///
+  /// \note This routine is a placeholder.
+  virtual void
+  TimeIntegration(
+      nimble::DataManager& data_manager,
+      double               time_previous,
+      double               time_current,
+      bool                 is_output_step,
+      bool                 contact_enabled){fprintf(stderr, "WARNING: Empty explicit time integration!\n");};
+  
   /// \brief Compute the external force
   ///
   /// \param data_manager Reference to the DataManager object

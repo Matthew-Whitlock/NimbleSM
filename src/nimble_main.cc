@@ -74,6 +74,9 @@
 #include <vt/transport.h>
 #endif
 
+#include <resilience/Context.hpp>
+#include <resilience/AutomaticCheckpoint.hpp>
+
 #include <cmath>
 #include <cstdlib>
 #include <fstream>
@@ -510,7 +513,17 @@ ExplicitTimeIntegrator(
   nimble::ProfilingTimer     watch_internal;
   std::map<int, std::size_t> contactInfo;
 
-  for (int step = 0; step < num_load_steps; step++) {
+  auto ctx = KokkosResilience::make_context("checkpoints.data", "/home/mwhitlo/kokkos_config.json"); //TODO: accept user input, don't be lazy
+  int latest_version = KokkosResilience::latest_version(*ctx, "main_loop");
+  std::cerr << "Latest version " << latest_version << std::endl;
+  if(latest_version>0){
+      latest_version--;
+  } else{
+      latest_version=0;
+  }
+
+  for (int step = latest_version; step < num_load_steps; step++) {
+
     if (my_rank == 0) {
       if (10 * (step + 1) % num_load_steps == 0 && step != num_load_steps - 1) {
         std::cout << "   " << static_cast<int>(100.0 * static_cast<double>(step + 1) / num_load_steps) << "% complete"
@@ -525,6 +538,8 @@ ExplicitTimeIntegrator(
       if (step % output_frequency == 0 || step == num_load_steps - 1) { is_output_step = true; }
     }
 
+    KokkosResilience::checkpoint(*ctx, "main_loop", step+1, [&](){ 
+    
     time_previous = time_current;
     time_current += user_specified_time_step;
     delta_time      = time_current - time_previous;
@@ -549,7 +564,9 @@ ExplicitTimeIntegrator(
     total_dynamics_time += watch_internal.pop_region_and_report_time();
 
     watch_internal.push_region("BC enforcement");
+    //KokkosResilience::gather_views(*ctx, [&](){ 
     model_data.ApplyKinematicConditions(data_manager, time_current, time_previous);
+    //}, true, false);
     watch_internal.pop_region_and_report_time();
 
     //
@@ -561,8 +578,10 @@ ExplicitTimeIntegrator(
     //
     // Evaluate the internal force
     //
+    //KokkosResilience::gather_views(*ctx, [&](){ 
     model_data.ComputeInternalForce(
         data_manager, time_previous, time_current, is_output_step, displacement, internal_force);
+    //}, true, false);
     total_force_time += watch_internal.pop_region_and_report_time();
 
     // Evaluate the contact force
@@ -576,7 +595,11 @@ ExplicitTimeIntegrator(
 
     // fill acceleration vector A^{n+1} = M^{-1} ( F^{n} + b^{n} )
     watch_internal.push_region("Time Integration Scheme");
-    if (contact_enabled) {
+
+    //KokkosResilience::gather_views(*ctx, [&](){ 
+    model_data.TimeIntegration(data_manager, time_previous, time_current, is_output_step, contact_enabled);
+    //}, true, false);
+    /*if (contact_enabled) {
       for (int i = 0; i < num_nodes; ++i) {
         const double oneOverM = 1.0 / lumped_mass(i);
         acceleration(i, 0)    = oneOverM * (internal_force(i, 0) + external_force(i, 0) + contact_force(i, 0));
@@ -590,15 +613,26 @@ ExplicitTimeIntegrator(
         acceleration(i, 1)    = oneOverM * (internal_force(i, 1) + external_force(i, 1));
         acceleration(i, 2)    = oneOverM * (internal_force(i, 2) + external_force(i, 2));
       }
-    }
+    }*/
 
     // V^{n+1}   = V^{n+1/2} + (dt/2)*A^{n+1}
-    velocity += half_delta_time * acceleration;
+    //velocity += half_delta_time * acceleration;
 
     model_data.UpdateWithNewVelocity(data_manager, half_delta_time);
 
     total_dynamics_time += watch_internal.pop_region_and_report_time();
 
+    //KokkosResilience::gather_views(*ctx, [&](){ 
+    model_data.UpdateStates(data_manager);
+    //}, true, false);
+    }, true);
+
+    //If we just recovered, update our time information.
+    if(latest_version > 0 && step == latest_version){
+      time_current = initial_time + user_specified_time_step*(latest_version+1);
+      time_previous = time_current - user_specified_time_step;
+    }
+    
     if (is_output_step) {
       watch_internal.push_region("Output");
       //
@@ -610,7 +644,6 @@ ExplicitTimeIntegrator(
       total_exodus_write_time += watch_internal.pop_region_and_report_time();
     }  // if (is_output_step)
 
-    model_data.UpdateStates(data_manager);
   }
   double total_simulation_time = watch_simulation.pop_region_and_report_time();
 

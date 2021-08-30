@@ -136,6 +136,47 @@ class ModelData : public nimble::ModelDataBase
   void
   WriteExodusOutput(nimble::DataManager& data_manager, double time_current) override;
 
+  /// \brief Apply kinematic conditions using boundary manager
+  ///
+  /// \param[in] data_manager
+  /// \param[in] time_current
+  /// \param[in] time_previous
+  void
+  ApplyKinematicConditions(
+      nimble::DataManager& data_manager,
+      double               time_previous,
+      double               time_current) override;
+
+  /// \brief Time Integration step for acceleration
+  ///
+  /// \param[in] data_manager
+  /// \param[in] time_previous
+  /// \param[in] time_current
+  /// \param[in] is_output_step
+  /// \param[in] contact_enabled
+  /// \param[out] external_force  Output for internal force
+  void
+  TimeIntegration(
+      nimble::DataManager& data_manager,
+      double               time_previous,
+      double               time_current,
+      bool                 is_output_step,
+      bool                 contact_enabled) override;
+
+  /// \brief Compute the External force (just zeros for now)
+  ///
+  /// \param[in] data_manager
+  /// \param[in] time_previous
+  /// \param[in] time_current
+  /// \param[in] is_output_step
+  /// \param[out] external_force  Output for internal force
+  void
+  ComputeExternalForce(
+      nimble::DataManager& data_manager,
+      double               time_previous,
+      double               time_current,
+      bool                 is_output_step) override;
+
   /// \brief Compute the internal force
   ///
   /// \param[in] data_manager
