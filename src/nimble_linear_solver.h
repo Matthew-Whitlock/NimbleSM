@@ -52,6 +52,7 @@
 
 #ifdef NIMBLE_HAVE_MPI
 #include <mpi.h>
+extern MPI_Comm fenix_comm;
 #endif
 
 namespace nimble {

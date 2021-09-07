@@ -55,6 +55,7 @@
 #endif
 
 #include <mpi.h>
+extern MPI_Comm fenix_comm;
 
 #include <ArborX.hpp>
 #include <Kokkos_Core.hpp>

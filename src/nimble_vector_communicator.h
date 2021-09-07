@@ -56,6 +56,7 @@
 #include <mpi.h>
 
 #include "nimble.mpi.reduction.h"
+extern MPI_Comm fenix_comm;
 #endif
 
 #ifdef NIMBLE_HAVE_TRILINOS

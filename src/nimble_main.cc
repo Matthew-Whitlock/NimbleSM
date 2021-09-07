@@ -64,6 +64,8 @@
 
 #ifdef NIMBLE_HAVE_MPI
 #include <mpi.h>
+#include "fenix.h"
+MPI_Comm fenix_comm;
 #endif
 
 #ifdef NIMBLE_HAVE_TRILINOS
@@ -222,6 +224,7 @@ NimbleInitializeAndGetInput(int argc, char** argv, nimble::Parser& parser)
     int mpi_err = MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     if (mpi_err != MPI_SUCCESS) { throw std::logic_error("\nError:  MPI_Comm_rank() returned nonzero error code.\n"); }
     mpi_err = MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
+    num_ranks--;
     if (mpi_err != MPI_SUCCESS) { throw std::logic_error("\nError:  MPI_Comm_size() returned nonzero error code.\n"); }
   }
 #endif
@@ -374,10 +377,32 @@ ExplicitTimeIntegrator(
     nimble::DataManager&                      data_manager,
     std::shared_ptr<nimble::ContactInterface> contact_interface)
 {
+  auto ctx = KokkosResilience::make_context("checkpoints.data", "/home/mwhitlo/kokkos_config.json"); //TODO: accept user input, don't be lazy
+  int status = 0;
+  {
+  int fenix_role, fenix_error; 
+  Fenix_Init(&fenix_role, MPI_COMM_WORLD, &fenix_comm, NULL, NULL, 1, 0, MPI_INFO_NULL, &fenix_error);
+
+  if(fenix_error){
+    fprintf(stderr, "Fenix init found an error (%d)! Try launching with more spare ranks\n", fenix_error);
+    exit(1);
+  }
+
+  int tmp_rank; //Non-const momentarily needed to pull from fenix_comm here
+  MPI_Comm_rank(fenix_comm, &tmp_rank);
+  if(fenix_role != FENIX_ROLE_INITIAL_RANK){
+    if(tmp_rank == 0){
+       fprintf(stderr, "Fenix recovering from failure.\n");
+    }
+    
+    ctx->reset();
+  }
+
+
   int        dim          = mesh.GetDim();
   int        num_nodes    = static_cast<int>(mesh.GetNumNodes());
   int        num_blocks   = static_cast<int>(mesh.GetNumBlocks());
-  const int  my_rank      = parser.GetRankID();
+  const int  my_rank      = tmp_rank;
   const int  num_ranks    = parser.GetNumRanks();
   const long num_unknowns = num_nodes * mesh.GetDim();
 
@@ -436,7 +461,6 @@ ExplicitTimeIntegrator(
 
   auto& model_data = *(data_manager.GetMacroScaleData());
 
-  int status = 0;
 
   //
   // Extract view for global field vectors
@@ -513,7 +537,6 @@ ExplicitTimeIntegrator(
   nimble::ProfilingTimer     watch_internal;
   std::map<int, std::size_t> contactInfo;
 
-  auto ctx = KokkosResilience::make_context("checkpoints.data", "/home/mwhitlo/kokkos_config.json"); //TODO: accept user input, don't be lazy
   int latest_version = KokkosResilience::latest_version(*ctx, "main_loop");
   std::cerr << "Latest version " << latest_version << std::endl;
   if(latest_version>0){
@@ -688,6 +711,9 @@ ExplicitTimeIntegrator(
     //
     std::cout << " --- Exodus Write = " << total_exodus_write_time << "\n";
     //
+  }
+
+  //TODO: Fenix finalize
   }
 
   return status;

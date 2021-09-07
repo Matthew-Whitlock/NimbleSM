@@ -54,6 +54,7 @@
 
 #ifdef NIMBLE_HAVE_MPI
 #include "mpi.h"
+extern MPI_Comm fenix_comm;
 #endif
 
 #ifdef NIMBLE_HAVE_KOKKOS

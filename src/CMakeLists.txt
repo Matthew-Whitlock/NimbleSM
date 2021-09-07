@@ -118,7 +118,7 @@ IF(NIMBLE_HAVE_KOKKOS)
   ENDIF()
 
   if (NIMBLE_HAVE_TRILINOS OR NIMBLE_HAVE_MPI)
-    target_link_libraries(NimbleSM PRIVATE MPI::MPI_CXX)
+      target_link_libraries(NimbleSM PRIVATE MPI::MPI_CXX)
   ENDIF()
 ENDIF()
 

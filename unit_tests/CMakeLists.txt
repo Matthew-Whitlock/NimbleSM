@@ -64,11 +64,11 @@ endif()
 message(" * Link other libraries")
 
 if (NIMBLE_HAVE_TRILINOS)
-  target_link_libraries(NimbleSM_Unit Trilinos::Trilinos MPI::MPI_CXX)
+    #target_link_libraries(NimbleSM_Unit Trilinos::Trilinos MPI::MPI_CXX)
 else()
 
   if (NIMBLE_HAVE_MPI)
-    target_link_libraries(NimbleSM_Unit MPI::MPI_CXX)
+      #target_link_libraries(NimbleSM_Unit MPI::MPI_CXX)
   endif()
 
   if(NIMBLE_HAVE_KOKKOS)

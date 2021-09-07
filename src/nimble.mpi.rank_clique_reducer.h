@@ -45,6 +45,7 @@
 #define NIMBLE_MPI_RANK_CLIQUE_REDUCER
 
 #include <mpi.h>
+extern MPI_Comm fenix_comm;
 
 #include <algorithm>
 #include <memory>
